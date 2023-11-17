@@ -1,15 +1,17 @@
 package main
 
 import (
-	"log"
 	"fmt"
+	"log"
+	"net"
 	"os"
+	"strings"
 
-	"github.com/joho/godotenv"
 	"github.com/gocolly/colly"
+	"github.com/joho/godotenv"
 )
 
-func main() {
+func login() {
 	c := colly.NewCollector()
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -34,17 +36,12 @@ func main() {
 
 	c.Visit(URL)
 
-	// fmt.Printf("%v\n", magicToken)
-	// fmt.Printf("%v\n", inputURL)
-
-	// TODO: Check if the login was successful
 	c.OnResponse(func(r *colly.Response) {
-		if r.StatusCode == 200 {
-			fmt.Println("Login successful!")
+		if strings.Contains(strings.ToLower(string(r.Body)), "authentication failed") {
+			fmt.Println("Authentication failed! Please check your credentials.")
 		} else {
-			fmt.Println("Login failed.")
+			fmt.Println("Login successful!")
 		}
-		fmt.Println(r)
 	})
 
 	c.Post(URL, map[string]string{
@@ -53,4 +50,31 @@ func main() {
 		"magic":    magicToken,
 		"4Tredir":  inputURL,
 	})
+
+}
+
+func checkIfConnectedToNetwor() bool {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		panic(err)
+	}
+
+	isConnectedToNetwork := false
+
+	for _, addr := range addrs {
+		ipNet, ok := addr.(*net.IPNet)
+		if ok && !ipNet.IP.IsLoopback() && ipNet.IP.To4() != nil {
+			isConnectedToNetwork = ipNet.IP != nil
+		}
+	}
+
+	return isConnectedToNetwork
+}
+
+func main() {
+	if checkIfConnectedToNetwor() {
+		login()
+	} else {
+		fmt.Println("Not connected to a network.")
+	}
 }
