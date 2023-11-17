@@ -72,6 +72,9 @@ func checkIfConnectedToNetwork() bool {
 		ipNet, ok := addr.(*net.IPNet)
 		if ok && !ipNet.IP.IsLoopback() && ipNet.IP.To4() != nil {
 			isConnectedToNetwork = ipNet.IP != nil
+			if isConnectedToNetwork {
+				break
+			}
 		}
 	}
 
