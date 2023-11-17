@@ -24,8 +24,12 @@ options.add_argument("--headless")
 
 driver = webdriver.Chrome(options=options)  # or webdriver.Chrome(options=options)
 
-url = 'http://192.168.249.1:1000/login?'
-driver.get(url)
+
+USERNAME = os.getenv('USERNAME')
+PASSWORD = os.getenv('PASSWORD')
+URL = os.getenv('URL')
+
+driver.get(URL)
 
 page_source = driver.page_source
 
@@ -34,15 +38,13 @@ parser.feed(page_source)
 
 hidden_inputs = parser.hidden_inputs
 
-USERNAME = os.getenv('USERNAME')
-PASSWORD = os.getenv('PASSWORD')
-
 form_data = {
     'username': USERNAME,
     'password': PASSWORD,
     **hidden_inputs  
 }
+print(hidden_inputs)
 
-response = requests.post(url, data=form_data)
+response = requests.post(URL, data=form_data)
 
 print(response.content)
