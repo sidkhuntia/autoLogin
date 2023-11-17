@@ -11,11 +11,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func login() {
+func login() error {
 	c := colly.NewCollector()
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("Some error occured. Err: %s", err)
+		return fmt.Errorf("failed to load environment variables: %w", err)
 	}
 	USERNAME := os.Getenv("USERNAME")
 	PASSWORD := os.Getenv("PASSWORD")
@@ -34,7 +34,10 @@ func login() {
 		})
 	})
 
-	c.Visit(URL)
+	err = c.Visit(URL)
+	if err != nil {
+		return fmt.Errorf("failed to visit URL: %w", err)
+	}
 
 	c.OnResponse(func(r *colly.Response) {
 		if strings.Contains(strings.ToLower(string(r.Body)), "authentication failed") {
@@ -44,19 +47,23 @@ func login() {
 		}
 	})
 
-	c.Post(URL, map[string]string{
+	err = c.Post(URL, map[string]string{
 		"username": USERNAME,
 		"password": PASSWORD,
 		"magic":    magicToken,
 		"4Tredir":  inputURL,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to post login credentials: %w", err)
+	}
 
+	return nil
 }
 
-func checkIfConnectedToNetwor() bool {
+func checkIfConnectedToNetwork() bool {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to get network interface addresses: %s", err)
 	}
 
 	isConnectedToNetwork := false
@@ -72,8 +79,11 @@ func checkIfConnectedToNetwor() bool {
 }
 
 func main() {
-	if checkIfConnectedToNetwor() {
-		login()
+	if checkIfConnectedToNetwork() {
+		err := login()
+		if err != nil {
+			log.Fatalf("failed to login: %s", err)
+		}
 	} else {
 		fmt.Println("Not connected to a network.")
 	}
